@@ -1,0 +1,193 @@
+Task  details:
+---------------
+
+Some new requirements have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new Jenkins server so they wanted to create a Jenkins job to automate a task. Find below more details and complete the task accordingly:
+
+
+Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 8081 and click on Display Port. You should be able to access the Jenkins login page. Login using username theadmin and Adm!n321 password.
+
+Create a Jenkins job named httpd-php and configure it to accomplish below given tasks.
+
+a. Install httpd (whatever version is available in the yum repo by default) and php-7.1 and along with their dependencies on All App servers under Stratos Datacenter.
+
+b. HTTPD should serve on port 3000 on All App servers.
+
+c. There is already an index.php file under Apache default document root and LB server is already configured. Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 80 and click on Display Port. You should be able to access the php info page in the browser.
+
+Hint: As of right now no slave node has been added under Jenkins so you can simply accomplish the task using SSH within your job config.
+
+Note:
+
+You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also some times Jenkins UI gets stuck when Jenkins service restarts in the back end so in such case please make sure to refresh the UI page.
+
+Make sure Jenkins job passes even on repetitive runs as validation may try to build the job multiple times.
+
+Note: For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+Solution:
+--------
+
+
+
+###creating script on Jenkins serverwith GUI ########:
+------------------------------------------------------
+
+on jenkins server with CLI:  ( vi command does not  exist  )   
+-------------------------
+
+ssh -l j enkins  jenkins
+
+cat << EOT > jenkins_job.sh
+
+echo "creating main script on Jenkins server in /var/jenkins_home/ ..."
+cat << EOF > jenkins.sh    
+#!/bin/bash
+sshpass -p "Ir0nM@n"  ssh -tt -o StrictHostKeyChecking=no  tony@stapp01  /home/tony/stapp01.sh
+sshpass -p "Am3ric@"  ssh -tt -o StrictHostKeyChecking=no  steve@stapp02 /home/steve/stapp02.sh
+sshpass -p "BigGr33n" ssh -tt -o StrictHostKeyChecking=no  banner@stapp03 /home/banner/stapp03.sh
+EOF
+
+chmod 755  /var/jenkins_home/jenkins.sh
+echo "############################# appserver1 ########################"
+echo "creating app server1's script in /var/jenkins_home/..."
+cat << EOF1 > stapp01.sh
+#!/bin/bash
+echo "Ir0nM@n" |sudo -S yum -y install epel-release yum-utils
+sudo yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+sudo yum-config-manager --enable remi-php71
+sudo yum -y install php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysqlnd php-fpm   php-mbstring   php-xml php-pear php-bcmath php-json
+sudo yum -y update httpd
+sudo yum -y install httpd
+sudo systemctl start httpd
+sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
+sudo -S systemctl reload httpd
+EOF1
+
+chmod 755  /var/jenkins_home/stapp01.sh
+echo "############################# appserver2 ########################"
+echo "creating app server2's script in /var/jenkins_home/..."
+cat << EOF2 > stapp02.sh
+#!/bin/bash
+echo "Am3ric@" |sudo -S yum -y install epel-release yum-utils
+sudo yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+sudo yum-config-manager --enable remi-php71
+sudo yum -y install php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysqlnd php-fpm   php-mbstring   php-xml php-pear php-bcmath php-json
+sudo yum -y update httpd
+sudo yum -y install httpd
+sudo systemctl start httpd
+sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
+sudo -S systemctl reload httpd
+EOF2
+
+chmod 755  /var/jenkins_home/stapp02.sh
+echo "############################# appserver3 ########################"
+echo "creating app server3's script in /var/jenkins_home/..."
+cat << EOF3 > stapp03.sh
+#!/bin/bash
+echo "BigGr33n" |sudo -S yum -y install epel-release yum-utils
+sudo yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+sudo yum-config-manager --enable remi-php71
+sudo yum -y install php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysqlnd php-fpm   php-mbstring   php-xml php-pear php-bcmath php-json
+sudo yum -y update httpd
+sudo yum -y install httpd
+sudo systemctl start httpd
+sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
+sudo -S systemctl reload httpd
+EOF3
+
+chmod 755  /var/jenkins_home/stapp03.sh
+
+EOT
+
+chmod 755   /var/jenkins_home/jenkins_job.sh
+
+on jenkins server with CLI , start 'jenkins_job.sh':
+--------------------------------------------------
+ /var/jenkins_home/jenkins_job.sh
+
+send  each script stappXX.sh  to app  server(s):
+----------------------------------------------
+sftp tony@stapp01    
+
+sftp> put stapp01.sh
+sftp> bye
+
+sftp steve@stapp02
+sftp> put stapp02.sh
+sftp> bye
+
+sftp banner@stapp03
+sftp> put stapp03.sh
+sftp> bye
+
+
+on Jenkis server with GUI , create a job :
+--------------------------------------------
+
+create job  "http_php"
+
+on Jenkis server with GUI ,install plugin(s):
+--------------------------------------------
+
+-ssh plugin
+-ssh agent plugin
+-publish over ssh plugin
+-ssh-credentials
+-scp publisher
+
+
+(Re)load  jenkins  server with GUI:
+----------------------------------
+
+on Jenkis server with GUI ,add the script :
+-----------------------------------------
+
+on Jenkis server with GUI,add  a shell  script  'during the build': 
+-----------------------------------------------------------------
+
+/var/jenkins_home/jenkins.sh
+ 
+ on Jenkis server with GUI, Build the job and check its output :
+ --------------------------------------------------------------
+
+
+check if port is correct and httpd is installed and running on all app  server:
+-----------------------------------------------------------------------------
+
+curl http://stapp01:3000
+
+curl http://stapp02:3000
+
+curl http://stapp03:3000
+
+
+==##############################################another  method  #######################################################:
+
+
+Another method using ssh credentials  plugin:
+
+ 1. ## on each app server
+    sudo visudo
+    tony ALL=(ALL) NOPASSWD: ALL
+
+
+    2. Install plugin:
+    SSH
+
+    3. Jenkins --> Manage Jenkins --> Credentials --> add credentials 
+    Add the three app server username and pass
+
+    4. Jenkins --> Manage Jenkins --> configure system --> go to section ( ssh remote hosts) -- add three hostnames
+
+    5. Create a freestyle job --> configure the job as : execute command as shell on the remote agent
+
+
+sudo yum -y install epel-release yum-utils
+sudo yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+sudo yum-config-manager --enable remi-php73
+sudo yum -y install php php-common php-opcache php-mcrypt php-cli php-gd php-curl php-mysqlnd
+sudo yum -y update httpd
+sudo yum -y install httpd
+sudo sed -i "s/80/5003/g" /etc/httpd/conf/httpd.conf
+sudo systemctl restart httpd
+
