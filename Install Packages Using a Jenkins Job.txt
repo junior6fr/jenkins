@@ -35,7 +35,7 @@ Solution:
 on jenkins server with CLI:  ( vi command does not  exist  )   
 -------------------------
 
-ssh -l j enkins  jenkins
+ssh -l jenkins  jenkins
 
 cat << EOT > jenkins_job.sh
 
