@@ -1,6 +1,5 @@
 Task  details:
 ---------------
-
 Some new requirements have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new Jenkins server so they wanted to create a Jenkins job to automate a task. Find below more details and complete the task accordingly:
 
 Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 8081 and click on Display Port. You should be able to access the Jenkins login page. Login using username theadmin and Adm!n321 password.
@@ -25,7 +24,6 @@ Note: For these kind of scenarios requiring changes to be done in a web UI, plea
 
 Solution:
 --------
-
 ###creating script on Jenkins serverwith GUI ########:
 ------------------------------------------------------
 
