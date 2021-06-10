@@ -1,10 +1,10 @@
 Task  details:
 ---------------
-Some new REQUIERMENTOSMENTS have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new JJJJJJJEEEEEKKKKKIIIINNNNSSSS server so they wanted to create a JJJJJJJEEEEEKKKKKIIIINNNNSSSS job to automate a task. Find below more details and complete the task accordingly:
+Some new REQUIERMENTOSMENTS have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new Jenkins server so they wanted to create a Jenkins job to automate a task. Find below more details and complete the task accordingly:
 
-Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 8081 and click on Display Port. You should be able to access the JJJJJJJEEEEEKKKKKIIIINNNNSSSS login page. Login using username theadmin and Adm!n321 password.
+Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 8081 and click on Display Port. You should be able to access the Jenkins login page. Login using username theadmin and Adm!n321 password.
 
-Create a JJJJJJJEEEEEKKKKKIIIINNNNSSSS job named httpd-php and configure it to accomplish below given tasks.
+Create a Jenkins job named httpd-php and configure it to accomplish below given tasks.
 
 a. Install httpd (whatever version is available in the yum repo by default) and php-7.1 and along with their dependencies on All App servers under Stratos Datacenter.
 
@@ -12,39 +12,39 @@ b. HTTPD should serve on port 3000 on All App servers.
 
 c. There is already an index.php file under Apache default document root and LB server is already configured. Click on the + button in the top left corner and select option Select port to view on Host 1, enter port 80 and click on Display Port. You should be able to access the php info page in the browser.
 
-Hint: As of right now no slave node has been added under JJJJJJJEEEEEKKKKKIIIINNNNSSSS so you can simply accomplish the task using SSH within your job config.
+Hint: As of right now no slave node has been added under Jenkins so you can simply accomplish the task using SSH within your job config.
 
 Note:
 
-You might need to install some plugins and restart JJJJJJJEEEEEKKKKKIIIINNNNSSSS service. So, we recommend clicking on Restart JJJJJJJEEEEEKKKKKIIIINNNNSSSS when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also some times JJJJJJJEEEEEKKKKKIIIINNNNSSSS UI gets stuck when JJJJJJJEEEEEKKKKKIIIINNNNSSSS service restarts in the back end so in such case please make sure to refresh the UI page.
+You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also some times Jenkins UI gets stuck when Jenkins service restarts in the back end so in such case please make sure to refresh the UI page.
 
-Make sure JJJJJJJEEEEEKKKKKIIIINNNNSSSS job passes even on repetitive runs as validation may try to build the job multiple times.
+Make sure Jenkins job passes even on repetitive runs as validation may try to build the job multiple times.
 
 Note: For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
 
 Solution:
 --------
-###creating script on JJJJJJJEEEEEKKKKKIIIINNNNSSSS serverwith GUI ########:
+###creating script on Jenkins serverwith GUI ########:
 ------------------------------------------------------
 
-on JJJJJJJEEEEEKKKKKIIIINNNNSSSS server with CLI:  ( vi command does not  exist  )   
+on Jenkins server with CLI:  ( vi command does not  exist  )   
 -------------------------
 
-ssh -l JJJJJJJEEEEEKKKKKIIIINNNNSSSS  JJJJJJJEEEEEKKKKKIIIINNNNSSSS
+ssh -l Jenkins  Jenkins
 
-cat << EOT > JJJJJJJEEEEEKKKKKIIIINNNNSSSS_job.sh
+cat << EOT > Jenkins_job.sh
 
-echo "creating main script on JJJJJJJEEEEEKKKKKIIIINNNNSSSS server in /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/ ..."
-cat << EOF > JJJJJJJEEEEEKKKKKIIIINNNNSSSS.sh    
+echo "creating main script on Jenkins server in /var/Jenkins_home/ ..."
+cat << EOF > Jenkins.sh    
 #!/bin/bash
 sshpass -p "Ir0nM@n"  ssh -tt -o StrictHostKeyChecking=no  tony@stapp01  /home/tony/stapp01.sh
 sshpass -p "Am3ric@"  ssh -tt -o StrictHostKeyChecking=no  steve@stapp02 /home/steve/stapp02.sh
 sshpass -p "BigGr33n" ssh -tt -o StrictHostKeyChecking=no  banner@stapp03 /home/banner/stapp03.sh
 EOF
 
-chmod 755  /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/JJJJJJJEEEEEKKKKKIIIINNNNSSSS.sh
+chmod 755  /var/Jenkins_home/Jenkins.sh
 echo "############################# appserver1 ########################"
-echo "creating app server1's script in /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/..."
+echo "creating app server1's script in /var/Jenkins_home/..."
 cat << EOF1 > stapp01.sh
 #!/bin/bash
 echo "Ir0nM@n" |sudo -S yum -y install epel-release yum-utils
@@ -58,9 +58,9 @@ sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
 sudo -S systemctl reload httpd
 EOF1
 
-chmod 755  /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/stapp01.sh
+chmod 755  /var/Jenkins_home/stapp01.sh
 echo "############################# appserver2 ########################"
-echo "creating app server2's script in /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/..."
+echo "creating app server2's script in /var/Jenkins_home/..."
 cat << EOF2 > stapp02.sh
 #!/bin/bash
 echo "Am3ric@" |sudo -S yum -y install epel-release yum-utils
@@ -74,9 +74,9 @@ sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
 sudo -S systemctl reload httpd
 EOF2
 
-chmod 755  /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/stapp02.sh
+chmod 755  /var/Jenkins_home/stapp02.sh
 echo "############################# appserver3 ########################"
-echo "creating app server3's script in /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/..."
+echo "creating app server3's script in /var/Jenkins_home/..."
 cat << EOF3 > stapp03.sh
 #!/bin/bash
 echo "BigGr33n" |sudo -S yum -y install epel-release yum-utils
@@ -90,15 +90,15 @@ sudo sed -i "s/80/3000/g" /etc/httpd/conf/httpd.conf
 sudo -S systemctl reload httpd
 EOF3
 
-chmod 755  /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/stapp03.sh
+chmod 755  /var/Jenkins_home/stapp03.sh
 
 EOT
 
-chmod 755   /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_job.sh
+chmod 755   /var/Jenkins_home/Jenkins_job.sh
 
-on JJJJJJJEEEEEKKKKKIIIINNNNSSSS server with CLI , start 'JJJJJJJEEEEEKKKKKIIIINNNNSSSS_job.sh':
+on Jenkins server with CLI , start 'Jenkins_job.sh':
 --------------------------------------------------
- /var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_job.sh
+ /var/Jenkins_home/Jenkins_job.sh
 
 send  each script stappXX.sh  to app  server(s):
 ----------------------------------------------
@@ -131,7 +131,7 @@ on Jenkis server with GUI ,install plugin(s):
 -scp publisher
 
 
-(Re)load  JJJJJJJEEEEEKKKKKIIIINNNNSSSS  server with GUI:
+(Re)load  Jenkins  server with GUI:
 ----------------------------------
 
 on Jenkis server with GUI ,add the script :
@@ -140,7 +140,7 @@ on Jenkis server with GUI ,add the script :
 on Jenkis server with GUI,add  a shell  script  'during the build': 
 -----------------------------------------------------------------
 
-/var/JJJJJJJEEEEEKKKKKIIIINNNNSSSS_home/JJJJJJJEEEEEKKKKKIIIINNNNSSSS.sh
+/var/Jenkins_home/Jenkins.sh
  
  on Jenkis server with GUI, Build the job and check its output :
  --------------------------------------------------------------
