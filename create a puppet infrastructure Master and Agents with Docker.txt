@@ -1,0 +1,99 @@
+
+
+                                                                                           ull  a puppetserver image:                               ################################Master#########################
+---------------------------
+docker run --name  puppetserver   --hostname puppetserver  -d puppet/puppetserver
+
+configure  puppetserver container:
+----------------------------------
+docker  exec  -it  puppetserver  bash
+
+
+
+
+
+pull  a puppetserver image and configure  a puppet agent 1:   ################################Node 1 #########################
+---------------------------------------------------------
+docker run --name puppetagent1   --hostname puppetagent1  -d puppet/puppetserver
+
+configure puppetagent1 as a puppet agent:
+----------------------------------------
+
+docker exec -it puppetagent1 bash
+
+Un(install)  puppetserver:
+-------------------------
+dpkg -r puppetserver
+dpkg --purge  puppetserver
+
+Install curl, iputils:
+---------------------
+apt update -y
+apt install curl -y
+apt install iputils-ping -y
+
+Update /etc/hosts:
+-----------------
+
+echo "172.18.0.2  puppetserver  puppet " >> /etc/hosts
+
+
+
+
+pull  a puppetserver image and configure  a puppet agent 2:   ################################Node 2 #########################
+---------------------------------------------------------
+docker run --name puppetagent2   --hostname puppetagent2  -d puppet/puppetserver
+
+configure puppetagent2 as a puppet agent:
+----------------------------------------
+
+docker exec -it puppetagent2 bash
+
+Un(install)  puppetserver:
+-------------------------
+dpkg -r puppetserver
+dpkg --purge  puppetserver
+
+Install curl, iputils:
+---------------------
+apt update -y
+apt install curl -y
+apt install iputils-ping -y
+
+Update /etc/hosts:
+-----------------
+
+echo "172.18.0.2  puppetserver  puppet " >> /etc/hosts
+
+
+
+
+pull  a puppetserver image and configure  a puppet agent 3:   ################################Node 3 #########################
+---------------------------------------------------------
+docker run --name puppetagent3   --hostname puppetagent3  -d puppet/puppetserver
+
+configure puppetagent3 as a puppet agent:
+----------------------------------------
+
+docker exec -it puppetagent3 bash
+
+Un(install)  puppetserver:
+-------------------------
+dpkg -r puppetserver
+dpkg --purge  puppetserver
+
+
+Install curl, iputils:
+---------------------
+apt update -y
+apt install curl -y
+apt install iputils-ping -y
+
+Update /etc/hosts:
+-----------------
+
+echo "172.18.0.2  puppetserver  puppet " >> /etc/hosts
+
+
+ 
+
