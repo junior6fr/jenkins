@@ -1,0 +1,500 @@
+Task Details:
+-------------
+
+The Nautilus DevOps team want to deploy a WordPress website on Kubernetes cluster. They are going to use Nginx, phpfpm and MySQL for the database. The team had already gathered the requirements and now they want to make this website live. Below you can find more details:
+
+
+a. Create some secrets for MySQL.
+
+Create a secret named mysql-root-pass wih key/value pairs as below:
+name: password and value: R00t
+
+Create a secret named mysql-user-pass with key/value pairs as below
+name: username, value: kodekloud_gem and name: password, value: TmPcZjtRQx
+
+Create a secret named mysql-db-url with key/value pairs as below:
+name: database and value: kodekloud_db5
+
+Create a secret named mysql-host with key/value pairs as below:
+name: host and value: mysql-service
+
+b. We already have a database dump which is placed under /tmp/db.sql on jump_host. Once deployment is done, copy that dump into the MySQL container and import the same in newly created database kodekloud_db5.
+
+FOR FRONTEND TIER:
+
+a. Create a configMap which should be named as nginx-config, use nginx configuration in configMap with configurations as document root should be /var/www/html and add a directory index 'index index.html index.htm index.php'.
+
+b. Create a deployment to deploy nginx and phpfpm, use any nginx image for nginx container and any wordpress image with fpm like wordpress:php7.2-fpm for phpfpm container. For phpfpm container the database related environment variables should be MYSQL_DATABASE, MYSQL_USER, MYSQL_ROOT_PASSWORD, MYSQL_PASSWORD and MYSQL_HOST, further these should fetch values from the secrets, you created. Configure other spec as per your choice.
+
+c. Create a shared volume and a configmap volume, map the shared volume in both containers at location /var/www/html, and mount another volume at location /etc/nginx/nginx.conf in nginx container only.
+
+d. Create a node port type service for nginx deployment which should be named as nginx-service and the nodePort should be 30008.
+
+FOR BACKEND TIER:
+
+a. Create a persitentVolume for MySQL which should be named as mysql-pv, set other parameters as per your choice.
+
+b. Create a persistentVolumeClaim named mysql-pv-claim for MySQL to use the persistent volume you created, set the parameters as per your choice.
+
+c. Create a deployment for MySQL which should be named mysql-deployment, use any appropriate mysql image like mysql:5.6 and set other parameters as per your choice. Define database related environment variables MYSQL_DATABASE, MYSQL_USER, MYSQL_ROOT_PASSWORD, MYSQL_PASSWORD and MYSQL_HOST, these should fetch values from secrets you created. Volume should be mounted at location /var/lib/mysql in mysql container.
+
+d. Make changes in WordPress configuration file to update database related details, please do not hard code database details in the configuration.
+
+e. The WordPress website should run properly on nginx service nodePort.
+
+Note: The kubectl on jump_host has been configured to work with the kubernetes cluster.
+
+
+
+Solution:   #####  check  this  step(s)  on a  real  environment to  validate  this  walk  through !!!
+--------
+
+Useful  link:
+------------
+
+https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/
+
+create  secret:
+--------------
+
+kubectl create secret generic mysql-root-pass --from-literal=password=R00t                                                                           
+ 
+secret/mysql-root-pass created  
+
+
+
+kubectl create secret generic mysql-user-pass --from-literal=username=kodekloud_gem --from-literal=password=TmPcZjtRQx 
+
+secret/mysql-user-pass created 
+
+
+         
+kubectl create secret generic mysql-db-url --from-literal=database=kodekloud_db5                      
+
+secret/mysql-db-url created 
+
+
+        
+kubectl create secret generic mysql-host  --from-literal=host=mysql-service                                                                              
+
+secret/mysql-host created 
+
+
+
+kubectl get secrets       
+                                                                                                    
+NAME                  TYPE                                 DATA AGE: 
+default-token-m98w2   kubernetes.io/service-account-token   3   67s                                                                         
+mysql-db-url          Opaque                                1   9s                                                                          
+mysql-host            Opaque                                1   9s                                                                          
+mysql-root-pass       Opaque                                1   9s                                                                          
+mysql-user-pass       Opaque                                1   9s
+
+
+FRONTEND TIER:
+--------------
+
+Create a configMap:
+-------------------
+
+vi config_map.yml
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    events {
+    }
+
+    http {
+      index     index.php index.html index.htm;
+      server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        root /var/www/html;
+        location ~ \.php$ {
+          include fastcgi_params;
+          fastcgi_param REQUEST_METHOD $request_method;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          fastcgi_pass 127.0.0.1:9000;
+        }            
+      }
+    }
+    
+ save & exit
+ 
+apply configmap:
+----------------   
+kubectl apply -f  config_map.yml
+
+check configmap:
+----------------
+
+NAME               DATA   AGE:
+kube-root-ca.crt   1      54m
+nginx-config       1      2m17s 
+ 
+
+create deployment:
+-----------------
+
+# Create a deployment  containing the PHP-FPM application 
+# and nginx, each mounting the `shared-files` volume to their
+# respective /var/www/html directories.
+
+vi nginx-phpfpm-deployment.yml
+
+
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-phpfpm
+  labels:
+    app: nginx-phpfpm
+spec:
+  selector:
+    matchLabels:
+      app: nginx-phpfpm
+  template:
+    metadata:
+      labels:
+        app: nginx-phpfpm
+    spec:
+      volumes:
+      - name: shared-files
+        emptyDir: {}    
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+      containers:
+        - image: nginx:latest
+          name: nginx-container
+          volumeMounts:
+          - name: shared-files
+            mountPath: /var/www/html
+          - name: nginx-config-volume
+            mountPath: /etc/nginx/nginx.conf
+            subPath: nginx.conf
+        - image: wordpress:php7.2-fpm
+          name:  php-fpm-container 
+          env:                                                                                                                                   
+            - name: MYSQL_ROOT_PASSWORD                                                                                                          
+              valueFrom:                                                                                                                         
+                secretKeyRef:                                                                                                                     
+                  name: mysql-root-pass                                                                                                            
+                  key: password                                                                                                                    
+            - name: MYSQL_DATABASE                                                                                                               
+              valueFrom:                                                                                                                         
+                secretKeyRef:                                                                                                                     
+                  name: mysql-db-url                                                                                                               
+                  key: database                                                                                                                    
+            - name: MYSQL_USER                                                                                                                   
+              valueFrom:                                                                                                                         
+                secretKeyRef:                                                                                                                     
+                  name: mysql-user-pass                                                                                                            
+                  key: username                                                                                                                    
+            - name: MYSQL_PASSWORD                                                                                                               
+              valueFrom:                                                                                                                         
+                secretKeyRef:                                                                                                                     
+                  name: mysql-user-pass                                                                                                            
+                  key: password                                                                                                                    
+            - name: MYSQL_HOST                                                                                                                   
+              valueFrom:                                                                                                                         
+                secretKeyRef:                                                                                                                    
+                  name: mysql-host                                                                                                             
+                  key: host       
+          volumeMounts:
+          - name: shared-files
+            mountPath: /var/www/html
+           
+
+save & exit
+
+apply pod:
+---------
+
+kubectl apply  -f   nginx-phpfpm-deployment.yml
+
+
+check if pod's running :   ## wait until pod is running
+-----------------------
+
+kubectl  get pod
+
+NAME           READY   STATUS              RESTARTS   AGE:
+nginx-phpfpm   0/2     ContainerCreating   0          3s
+
+check pod:
+---------
+kubectl get pod
+
+NAME           READY   STATUS    RESTARTS   AGE:
+nginx-phpfpm   2/2     Running   0          86s
+
+
+create  a  service  for  nginx  deployment:
+----------------------------------------
+
+vi nginx-phpfpm.yml
+
+---
+apiVersion: v1                                                                                                                
+kind: Service                                                                                                                 
+metadata:                                                                                                                     
+  name: nginx-service 
+  labels:
+    app: nginx-phpfpm
+spec:                                                                                                                         
+  type: NodePort                                                                                                              
+  selector:                                                                                                                   
+    app: nginx-phpfpm                                                                                                              
+  ports:                  
+  - port: 80
+    protocol: TCP                                                                                                    
+    nodePort: 30008
+      
+save &  exit
+
+apply  service:
+--------------
+
+kubectl apply -f  nginx-phpfpm.yml
+
+service/nginx-service created    
+
+check  service:
+----------------
+
+kubectl  get svc
+
+NAME                    TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE:
+kubernetes              ClusterIP   10.96.0.1      <none>        443/TCP          37m
+nginx-service           NodePort    10.103.26.57   <none>        80:30008/TCP     35m
+
+
+create a persistent volume (PV) for Mysql:
+-----------------------------------------
+
+vi pv.yml
+
+---
+apiVersion: v1                                                                               
+kind: PersistentVolume                                                                       
+metadata:                                                                                    
+  name: mysql-pv                                                                              
+spec:                                                                                        
+  capacity:                                                                                  
+    storage: 750Mi                                                                           
+  volumeMode: Filesystem                                                                     
+  accessModes:                                                                               
+  - ReadWriteOnce                                                                            
+  hostPath:                                                                                  
+    path: /var/lib/mysql                                                                          
+  persistentVolumeReclaimPolicy: Retain                                                      
+  storageClassName: standard    
+
+save  &  exit
+
+
+apply persistent volume:
+-----------------------
+
+kubectl apply -f  pv.yml
+
+check persistent volume:
+-----------------------
+
+kubectl get pv
+
+persistentvolume/mysql-pv created
+
+create a persistent volume claim  (PVC)  for Mysql:
+--------------------------------------------------
+
+vi pvc.yml
+
+---
+apiVersion: v1                                                                               
+kind: PersistentVolumeClaim                                                                  
+metadata:                                                                                    
+  name: mysql-pv-claim                                                                       
+spec:                                                                                        
+  accessModes:                                                                               
+    - ReadWriteOnce                                                                          
+  volumeMode: Filesystem                                                                     
+  resources:                                                                                 
+    requests:                                                                                
+      storage: 550Mi                                                                         
+  storageClassName: standard 
+
+save  &  exit
+
+apply persistent volume claim (PVC):
+-----------------------------------
+
+kubectl apply -f  pvc.yml
+
+persistentvolumeclaim/mysql-pv-claim created 
+
+check persistent volume claim (PVC):
+------------------------------------
+
+kubectl get pvc
+
+                          
+create mysql  deployment:
+------------------------
+
+vi mysql-deployment.yml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      volumes:  
+      - name: mysql-pv
+        emptyDir: {}
+      containers: 
+      - name: mysql-container
+        image: mysql:5.6                                                                                                                       
+        env:                                                                                                                                   
+        - name: MYSQL_ROOT_PASSWORD                                                                                                          
+          valueFrom:                                                                                                                         
+            secretKeyRef:                                                                                                                     
+              name: mysql-root-pass                                                                                                            
+              key: password                                                                                                                    
+        - name: MYSQL_DATABASE                                                                                                               
+          valueFrom:                                                                                                                         
+            secretKeyRef:                                                                                                                     
+              name: mysql-db-url                                                                                                               
+              key: database                                                                                                                    
+        - name: MYSQL_USER                                                                                                                   
+          valueFrom:                                                                                                                         
+            secretKeyRef:                                                                                                                     
+              name: mysql-user-pass                                                                                                            
+              key: username                                                                                                                    
+        - name: MYSQL_PASSWORD                                                                                                               
+          valueFrom:                                                                                                                         
+            secretKeyRef:                                                                                                                     
+              name: mysql-user-pass                                                                                                            
+              key: password                                                                                                                    
+        - name: MYSQL_HOST                                                                                                                   
+          valueFrom:                                                                                                                         
+            secretKeyRef:                                                                                                                    
+              name: mysql-host                                                                                                             
+              key: host                                                                                                                  
+        ports:                                                                                                                                 
+        - containerPort: 3306                                                                                                                  
+          name: mysql                                                                                                                          
+        volumeMounts:                                                                                                                          
+        - name: mysql-pv                                                                                                       
+          mountPath: /var/lib/mysql  
+
+save  &  exit
+
+
+apply  mysql  deployment:
+------------------------
+
+kubectl apply -f   mysql-deployment.yml
+
+
+
+create  mysql-service:
+---------------------
+
+
+vi mysql-svc.yml
+
+---
+apiVersion: v1                                                                                                                
+kind: Service                                                                                                                 
+metadata:                                                                                                                     
+  name: mysql-service 
+  labels:
+    app: mysql
+spec:                                                                                                                         
+  selector:                                                                                                                   
+    app: mysql                                                                                                              
+  ports:                  
+  - port: 3306
+    protocol: TCP                                                                                                    
+ 
+
+save  &  exit
+
+Apply mysql  service:
+--------------------
+
+kubectl apply -f   mysql-svc.yml
+
+check mysql  service:
+---------------------
+
+kubectl  get svc
+
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE:
+kubernetes      ClusterIP   10.96.0.1       <none>        443/TCP        57m
+mysql-service   ClusterIP   10.110.94.30    <none>        3306/TCP       40s
+nginx-service   NodePort    10.102.89.175   <none>        80:30008/TCP   33m
+
+check  pod:
+----------
+kubectl get pod
+
+NAME                                READY   STATUS    RESTARTS   AGE:
+mysql-deployment-5b6c4fcd94-kczsn   1/1     Running   0          15m
+nginx-phpfpm-fb5ffdc65-ds9vk        2/2     Running   0          2m37s
+
+check deployment:
+----------------
+
+kubectl  get deploy
+
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE:
+mysql-deployment   1/1     1            1           13m
+nginx-phpfpm       1/1     1            1           9s
+
+ check app on UI: (graphical user interface)
+ ---------------
+ 
+ select port to view on Host 1
+ 
+display port:  Enter  30008
+
+WordPress Configuration:
+
+Enter:  MYSQL_DATABASE 
+        MYSQL_USER 
+        MYSQL_PASSWORD
+        MYSQL_SERVICE
+        
+
+
+WordPress
+
+Successful database connection
+All right, sunshine! You’ve made it through this part of the installation. WordPress can now communicate with your database. If you are ready, time now to…
+
+Run the installation
+
+
